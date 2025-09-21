@@ -82,39 +82,73 @@ data Delete : ℕ → BTree → BTree → Set where
     neqr   : n ≢ x → Search n u true  → Delete n  u             u'  → Delete n (node x t u)             (node x t u') 
 
 -- Giving two natural number 'm' and 'n', with m ≢ n, the result of searching 'm' in the tree will remain the same after deleting 'n' from the tree.
-delete-preserve : ∀ {m n t} {t' : BTree} → m ≢ n → let t' = delete n t in search m t' ≡ search m t
-delete-preserve         {n = n} {t = t}                      {t' = t'}             m≢n with (search n t)
-delete-preserve         {n = n} {t = nil}                    {t' = nil}            m≢n | true  = refl
-delete-preserve         {n = n} {t = nil}                    {t' = node x t' t''}  m≢n | true  = refl
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  with n ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | yes refl with m ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | yes refl | yes refl = ⊥-elim (m≢n refl)
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | yes refl | no  _    with x ≟ x
-delete-preserve {m = m} {x}     {node x nil nil}             {nil}                 m≢n | true  | yes refl | no  _    | yes refl = refl
-delete-preserve {m = m} {x}     {node x nil (node x₁ t₁ t₂)} {nil}                 m≢n | true  | yes refl | no  _    | yes refl = {!   !}
-delete-preserve {m = m} {x}     {node x (node x₁ t t₂) t₁}   {nil}                 m≢n | true  | yes refl | no  _    | yes refl = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | yes refl | no  _    | no _     = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | no  _    with m ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | no  _    | yes refl = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | true  | no  _    | no  _    = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = node x₁ t' t''} m≢n | true  with n ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = node x₁ t' t''} m≢n | true  | yes refl = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = node x₁ t' t''} m≢n | true  | no  _    with m ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = node x₁ t' t''} m≢n | true  | no  _    | yes refl = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = node x₁ t' t''} m≢n | true  | no  _    | no  _    = {!   !}
-delete-preserve         {n = n} {t = nil}                    {t' = nil}            m≢n | false = refl
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false with n ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | yes refl with m ≟ n
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | yes refl | yes refl = ⊥-elim (m≢n refl)
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | yes refl | no  _    = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | no  _    with m ≟ x
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | no  _    | yes refl = {!   !}
-delete-preserve {m = m} {n = n} {t = node x t t₁}            {t' = nil}            m≢n | false | no  _    | no  _    = {!   !} 
-delete-preserve         {n = n} {t = nil}                    {t' = node x t' t''}  m≢n | false = refl
-delete-preserve {m = m} {n = n} {t = node x₁ t t₁}           {t' = node x t' t''}  m≢n | false = {!   !}
+-- Function version
+delete-preserve : ∀ {m n} t → m ≢ n → search m t ≡ search m (delete n t)
+delete-preserve {m} {n}  nil m≢n = refl -- relation ver. case 1
+delete-preserve {m} {n} (node x t               u)               m≢n with m ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl with n ≟ m
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | yes refl = ⊥-elim (m≢n refl) -- relation ver. case 2
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    with (search n t)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  with n ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | yes refl = ⊥-elim (m≢n refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    with (search n t)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | true  with x ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | true  | yes refl = refl
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | true  | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | false with x ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | false | yes refl = refl
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | no  _    | false | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false with (search n u)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true with n ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | yes refl = ⊥-elim (m≢n refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    with (search n t)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | true with x ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | true  | yes refl = refl
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | true  | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | false with x ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | false | yes refl = refl
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | true  | no  _    | false | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | false with x ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | false | yes refl = refl
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | false | false | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x t               u)               m≢n | no  _    with n ≟ x
+delete-preserve {m} {n} (node x t               u)               m≢n | no  _    | yes refl with x ≟ x
+delete-preserve {m} {x} (node x nil             nil)             m≢n | no  _    | yes refl | yes refl = refl
+delete-preserve {m} {x} (node x nil             u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl = refl
+delete-preserve {m} {x} (node x t@(node _ _ _)  nil)             m≢n | no  _    | yes refl | yes refl = refl
+delete-preserve {m} {x} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl with (search m t)
+delete-preserve {m} {x} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl | true  = {!   !}
+delete-preserve {m} {x} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl | false with (search m u)
+delete-preserve {m} {x} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl | false | true  = {!   !}
+delete-preserve {m} {x} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  _    | yes refl | yes refl | false | false = {!   !}
+delete-preserve {m} {n} (node x t               u)               m≢n | no  _    | yes refl | no  x≢x  = ⊥-elim (x≢x refl)
+delete-preserve {m} {n} (node x nil             nil)             m≢n | no  m≢x  | no n≢x   with m ≟ x
+delete-preserve {m} {n} (node x nil             nil)             m≢n | no  m≢x  | no n≢x   | yes refl = ⊥-elim (m≢x refl)
+delete-preserve {m} {n} (node x nil             nil)             m≢n | no  m≢x  | no n≢x   | no  _    = refl
+delete-preserve {m} {n} (node x nil             u@(node _ _ _))  m≢n | no  m≢x  | no n≢x   with (search m u)
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  with m ≟ x₁
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | yes refl with (search n u)
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  with n ≟ x
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  | yes refl = ⊥-elim (n≢x refl)
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  | no  _    = {!   !}
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | yes refl | false = {!   !}
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | true  | no  _    = {!   !}
+delete-preserve {m} {n} (node x nil             u@(node x₁ _ _)) m≢n | no  m≢x  | no n≢x   | false = {!   !}
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   with (search m t)
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  with m ≟ x₁
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | yes refl with (search n t)
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  with n ≟ x
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  | yes refl = ⊥-elim (n≢x refl)
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | yes refl | true  | no  _    = {!   !}
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | yes refl | false = {!   !}
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | true  | no  _    = {!   !}
+delete-preserve {m} {n} (node x t@(node x₁ _ _) nil)             m≢n | no  m≢x  | no n≢x   | false = {!   !}
+delete-preserve {m} {n} (node x t@(node _ _ _)  u@(node _ _ _))  m≢n | no  m≢x  | no n≢x   = {! cong₂ (_∨_) (delete-preserve t m≢x) (delete-preserve u n≢x)  !} -- Can't directly use recursive call, but relation ver. can.
 
+-- Relation version
 delete-preserve' : ∀ {m n t b b'} {t' : BTree} → m ≢ n → Search m t b → Delete n t t' → Search m t' b' → b ≡ b'
 delete-preserve' m≢n  nil                                 d                nil            = refl
+-- Same as Dec(m ≡ x) ≡ yes case in function ver. (function: 13 cases, relation: 10 cases)
 delete-preserve' m≢n (eq  refl)                          (eqn    refl)     nil            = ⊥-elim (m≢n refl)
 delete-preserve' m≢n (eq  refl)                          (eqr    refl)     nil            = ⊥-elim (m≢n refl)
 delete-preserve' m≢n (eq  refl)                          (eql    refl)     nil            = ⊥-elim (m≢n refl)
@@ -125,6 +159,7 @@ delete-preserve' m≢n (eq  refl)                          (eql    refl)    (neq
 delete-preserve' m≢n (eq  refl)                          (eq2    refl  d) (neq x₁ s' s'') = ⊥-elim (m≢n refl)
 delete-preserve' m≢n (eq  refl)                          (neql   x₂ x₃ d) (neq x₁ s' s'') = ⊥-elim (x₁ refl)
 delete-preserve' m≢n (eq  refl)                          (neqr   x₂ x₃ d) (neq x₁ s' s'') = ⊥-elim (x₁ refl)
+-- Same as Dec(m ≡ x) ≡ no case in function ver. (function: 20 cases, relation: 20 cases)  *function ver. will have more cases
 delete-preserve' m≢n (neq x  nil          nil)           (eqn    x₁)       nil            = refl
 delete-preserve' m≢n (neq x  nil          nil)           (eqr    x₁)       nil            = refl
 delete-preserve' m≢n (neq x  nil          nil)           (eql    x₁)       nil            = refl
