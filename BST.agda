@@ -72,14 +72,14 @@ delete n (node n t@(node x _ _) u@(node _ _ _)) | true | yes refl = node x (dele
 ... | false    = node x t (delete n u)
 
 data Delete : ℕ → BTree → BTree → Set where
-    empty  :                                                          Delete n  nil                      nil
-    no-del :         Search n t false                               → Delete n  t                        t
-    eqn    : n ≡ x                                                  → Delete n (node n nil nil)          nil
-    eqr    : n ≡ x                                                  → Delete n (node n nil u)            u
-    eql    : n ≡ x                                                  → Delete n (node n t nil)            t
-    eq2    : n ≡ x                    → Delete m (node m t t')  t'' → Delete n (node n (node m t t') u) (node m t'' u)
-    neql   : n ≢ x → Search n t true  → Delete n  t             t'  → Delete n (node x t u)             (node x t' u)
-    neqr   : n ≢ x → Search n u true  → Delete n  u             u'  → Delete n (node x t u)             (node x t u') 
+    empty  :                                                          Delete n  nil                                  nil
+    no-del :         Search n t false                               → Delete n  t                                    t
+    eqn    : n ≡ x                                                  → Delete n (node n  nil           nil)           nil
+    eqr    : n ≡ x                                                  → Delete n (node n  nil          (node m u u')) (node m u    u')
+    eql    : n ≡ x                                                  → Delete n (node n (node m t t')  nil)          (node m t    t')
+    eq2    : n ≡ x                    → Delete m (node m t t')  t'' → Delete n (node n (node m t t') (node k u u')) (node m t'' (node k u u'))
+    neql   : n ≢ x → Search n t true  → Delete n  t             t'  → Delete n (node x  t             u)            (node x t'   u)
+    neqr   : n ≢ x → Search n u true  → Delete n  u             u'  → Delete n (node x  t             u)            (node x t    u') 
 
 -- Giving two natural number 'm' and 'n', with m ≢ n, the result of searching 'm' in the tree will remain the same after deleting 'n' from the tree.
 -- Function version
@@ -87,7 +87,7 @@ delete-preserve : ∀ {m n} t → m ≢ n → search m t ≡ search m (delete n 
 delete-preserve {m} {n}  nil m≢n = refl -- relation ver. case 1
 delete-preserve {m} {n} (node x t               u)               m≢n with m ≟ x
 delete-preserve {m} {n} (node x t               u)               m≢n | yes refl with n ≟ m
-delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | yes refl = ⊥-elim (m≢n refl) -- relation ver. case 2
+delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | yes refl = {!   !} -- ⊥-elim (m≢n refl) -- relation ver. case 2
 delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    with (search n t)
 delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  with n ≟ x
 delete-preserve {m} {n} (node x t               u)               m≢n | yes refl | no  _    | true  | yes refl = ⊥-elim (m≢n refl)
@@ -150,8 +150,6 @@ delete-preserve' : ∀ {m n t b b'} {t' : BTree} → m ≢ n → Search m t b �
 delete-preserve' m≢n  nil                                 d                nil            = refl
 -- Same as Dec(m ≡ x) ≡ yes case in function ver. (function: 13 cases, relation: 10 cases)
 delete-preserve' m≢n (eq  refl)                          (eqn    refl)     nil            = ⊥-elim (m≢n refl)
-delete-preserve' m≢n (eq  refl)                          (eqr    refl)     nil            = ⊥-elim (m≢n refl)
-delete-preserve' m≢n (eq  refl)                          (eql    refl)     nil            = ⊥-elim (m≢n refl)
 delete-preserve' m≢n (eq  x)                              d               (eq  x₁)        = refl
 delete-preserve' m≢n (eq  refl)                          (no-del x₂)      (neq x₁ s' s'') = ⊥-elim (x₁ refl)
 delete-preserve' m≢n (eq  refl)                          (eqr    refl)    (neq x₁ s' s'') = ⊥-elim (m≢n refl)
@@ -159,10 +157,8 @@ delete-preserve' m≢n (eq  refl)                          (eql    refl)    (neq
 delete-preserve' m≢n (eq  refl)                          (eq2    refl  d) (neq x₁ s' s'') = ⊥-elim (m≢n refl)
 delete-preserve' m≢n (eq  refl)                          (neql   x₂ x₃ d) (neq x₁ s' s'') = ⊥-elim (x₁ refl)
 delete-preserve' m≢n (eq  refl)                          (neqr   x₂ x₃ d) (neq x₁ s' s'') = ⊥-elim (x₁ refl)
--- Same as Dec(m ≡ x) ≡ no case in function ver. (function: 20 cases, relation: 20 cases)  *function ver. will have more cases
+-- Same as Dec(m ≡ x) ≡ no case in function ver. (function: 20 cases, relation: 18 cases)  *function ver. will have more cases
 delete-preserve' m≢n (neq x  nil          nil)           (eqn    x₁)       nil            = refl
-delete-preserve' m≢n (neq x  nil          nil)           (eqr    x₁)       nil            = refl
-delete-preserve' m≢n (neq x  nil          nil)           (eql    x₁)       nil            = refl
 delete-preserve' m≢n (neq x  s            s₁)            (no-del x₂)      (eq  refl)      = ⊥-elim (x refl)
 delete-preserve' m≢n (neq x  nil         (eq x₁))        (eqr    refl)    (eq  refl)      = refl
 delete-preserve' m≢n (neq x  nil         (neq x₁ s₁ s₂)) (eqr    refl)    (eq  refl)      = ⊥-elim (x₁ refl)
