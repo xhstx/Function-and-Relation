@@ -131,7 +131,6 @@ module Part2 -- up (Case analysis on BTree) v.s. up' (Case analysis on _≤_ and
   -- upSpec : 2 ≤ n → ∀ k → suc (suc k) ≤ n → ∀ t → Ch k xs t   → ∃ (λ t' → t' ≡ mapB subs (ch (suc k) xs))
   -- retab' : 2 ≤ n → ∀ k → suc (suc k) ≤ n → BT ...            → BT ...
 
-
 module Part3 -- Basic Analysis
   where
 
@@ -193,7 +192,6 @@ module Part3 -- Basic Analysis
               → (δ : Δ) → T δ
   basic-rec-≤ Δ T t p δ = let (m , n , m≤n) = t δ in rec-≤ (λ m n m≤n → (δ : Δ) → (m , n , m≤n) ≡ t δ → T δ) (λ m n m≤n b δ → p δ m n m≤n b) m n m≤n δ refl
 
-
   -- ℕPair
   -- Non-standard eliminator
   elim-ℕPair : (P : ℕ × ℕ → Set)
@@ -253,64 +251,62 @@ module Part3 -- Basic Analysis
                   → (δ : Δ) → T δ
   basic-rec-ℕPair Δ T t p δ = let (m , n) = t δ in rec-ℕPair (λ (m , n) → (δ : Δ) → (m , n) ≡ t δ → T δ) (λ m n b δ → p δ m n b) m n δ refl
 
--- open Part3
+open Part3
 
--- module Part4 -- Translation to basic analysis operators (eliminating dependent pattern matching)
---   where
---     -- To use a basic analysis, pass in all the inputs, and get some new arguments:
---     --   basic-rec:  recursive subresults
---     --   basic-case: constraints
---     -- All inputs should be passed in to allow specialization by unification (for example expanding the Below argument in a subsequent basic-case).
---     -- Constraints can be solved right away or passed as inputs to the next level.
+module Part4 -- Translation to basic analysis operators (eliminating dependent pattern matching)
+  where
+    -- To use a basic analysis, pass in all the inputs, and get some new arguments:
+    --   basic-rec:  recursive subresults
+    --   basic-case: constraints
+    -- All inputs should be passed in to allow specialization by unification (for example expanding the Below argument in a subsequent basic-case).
+    -- Constraints can be solved right away or passed as inputs to the next level.
 
---     -- Example:
---     -- wk : (m n : ℕ) → suc m ≤ n → m ≤ n
---     -- wk m .(suc m) (base refl)    = step (base refl)
---     -- wk m .(suc n) (step {n} m<n) = step (wk m n m<n)
+    -- Example:
+    -- wk : (m n : ℕ) → suc m ≤ n → m ≤ n
+    -- wk m .(suc m) (base refl)    = step (base refl)
+    -- wk m .(suc n) (step {n} m<n) = step (wk m n m<n)
 
---     wk : (m n : ℕ) → suc m ≤ n → m ≤ n
---     wk m n m<n = let P : (m n : ℕ) → m ≤ n → Set
---                      P = λ Dm Dn Dm<n → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn , Dm<n) ≡ (suc m , n , m<n) → m ≤ n
---                  in basic-rec-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n) → (suc m , n , m<n)) 
---                     (λ {(m , n , m<n) m' n' m'<n' b refl → {!   !}
---                         -- basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-≤ P (suc m) n m<n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n)) 
---                         -- (λ {(m , n , m<n , b) m₀ n₀ refl refl → step (base refl)}) 
---                         -- (λ {(m , .(suc n₀) , .(step m₀≤n₀) , b) m₀ n₀ m₀≤n₀ refl → let (_ , b') = b in step (b' (m , n₀ , m₀≤n₀) refl)})
---                         -- (m , n , m<n , b)
---                         }) 
---                     (m , n , m<n)
+    wk : (m n : ℕ) → suc m ≤ n → m ≤ n
+    wk m n m<n = let P : (m n : ℕ) → m ≤ n → Set
+                     P = λ Dm Dn Dm<n → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn , Dm<n) ≡ (suc m , n , m<n) → m ≤ n
+                 in basic-rec-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n) → (suc m , n , m<n))
+                      (λ {(m , n , m<n) m' n' m'<n' b refl →
+                          basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-≤ P (suc m) n m<n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
+                                       (λ {(m , n , m<n , b) m₀ n₀ refl refl → step (base refl)})
+                                       (λ {(m , .(suc n₀) , .(step m₀≤n₀) , b) m₀ n₀ m₀≤n₀ refl → let (_ , b') = b in step (b' (m , n₀ , m₀≤n₀) refl)})
+                                       (m , n , m<n , b)})
+                      (m , n , m<n)
 
+module Part5 -- Laws/transformations
+  where
 
--- module Part5 -- Laws/transformations
---   where
+  -- Redundant case analysis:
+  {-    lhs ⇒ rhs
+     =  lhs ⇐ case ... {
+          lhs'  ⇒ rhs'
+          lhs'' ⇒ rhs'' }
+  -}
 
---   -- Redundant case analysis:
---   {-    lhs ⇒ rhs
---      =  lhs ⇐ case ... {
---           lhs'  ⇒ rhs'
---           lhs'' ⇒ rhs'' }
---   -}
+  -- Swapping of nested case analyses
+  {-   case x {
+          x0 ⇒ case y { y0 ⇒ ...
+                        y1 ⇒ ... }
+          x1 ⇒ case y { y0 ⇒ ...
+                        y1 ⇒ ... } }
+     = case y {
+          y0 ⇒ case x { x0 ⇒ ...
+                        x1 ⇒ ... }
+          y1 ⇒ case x { x0 ⇒ ...
+                        x1 ⇒ ... } }
+  -}
 
---   -- Swapping of nested case analyses
---   {-   case x {
---           x0 ⇒ case y { y0 ⇒ ...
---                         y1 ⇒ ... }
---           x1 ⇒ case y { y0 ⇒ ...
---                         y1 ⇒ ... } }
---      = case y {
---           y0 ⇒ case x { x0 ⇒ ...
---                         x1 ⇒ ... }
---           y1 ⇒ case x { x0 ⇒ ...
---                         x1 ⇒ ... } }
---   -}
+  -- Key: What basic case operators do is only add constraints.
+  -- To-do: datatype-generic theorems
 
---   -- Key: What basic case operators do is only add constraints.
---   -- To-do: datatype-generic theorems
+  -- What about basic-rec?
+  -- Reducing induction on (indexed) data to induction on (indices that work as a) termination measure
 
---   -- What about basic-rec?
---   -- Reducing induction on (indexed) data to induction on (indices that work as a) termination measure
-
---   -- Back to wk v.s. wk', does the redundant case analysis transformation actually apply in the ‘base’ case?
+  -- Back to wk v.s. wk', does the redundant case analysis transformation actually apply in the ‘base’ case?
 
   -- Expand All Cases
   -- wk₁ : (m n : ℕ) → suc m ≤ n → m ≤ n
@@ -327,17 +323,17 @@ module Part3 -- Basic Analysis
                                         basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-ℕPair P (suc m) n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
                                                          (λ {(.zero , .zero , m<n , b) refl →
                                                              basic-case-≤ (suc zero ≤ zero × Below-ℕPair P (suc zero) zero) (λ _ → zero ≤ zero) (λ (m<n , _) → (suc zero , zero , m<n))
-                                                                          (λ {(.(base _) , b) m₀ n₀ _ refl → base refl})
+                                                                          (λ {(m<n , b) m₀ n₀ m₀≡n₀ refl → base refl})
                                                                           (λ {(m<n , b) m₀ n₀ m₀≤n₀ ()})
                                                              (m<n , b)})
                                                          (λ {(.zero , .(suc nₚ) , m<n , b) nₚ refl →
                                                              basic-case-≤ (Σ[ nₚ ∈ ℕ ] suc zero ≤ suc nₚ × Below-ℕPair P (suc zero) (suc nₚ)) (λ (nₚ , _) → zero ≤ suc nₚ) (λ (nₚ , m<n , _) → (suc zero , suc nₚ , m<n))
-                                                                          (λ {(.zero , .(base refl) , b) m₀ n₀ refl refl → step (base refl)})
+                                                                          (λ {(.zero , m<n , b) m₀ n₀ refl refl → step (base refl)})
                                                                           (λ {(nₚ , .(step m₀≤n₀) , b) m₀ n₀ m₀≤n₀ refl → let ((_ , b') , _) = b in step (b' (zero , nₚ , m₀≤n₀) refl)})
                                                              (nₚ , m<n , b)})
                                                          (λ {(.(suc mₚ) , .zero , m<n , b) mₚ refl →
                                                              basic-case-≤ (Σ[ mₚ ∈ ℕ ] suc (suc mₚ) ≤ zero × Below-ℕPair P (suc (suc mₚ)) zero) (λ (mₚ , _) → suc mₚ ≤ zero) (λ (mₚ , m<n , _) → (suc (suc mₚ) , zero , m<n))
-                                                                          (λ {(mₚ , base () , b) m₀ n₀ m₀≡n₀ refl})
+                                                                          (λ {(mₚ , .(base _) , b) m₀ n₀ () refl})
                                                                           (λ {(mₚ , m<n , b) m₀ n₀ m₀≤n₀ ()})
                                                              (mₚ , m<n , b)})
                                                          (λ {(.(suc mₚ) , .(suc nₚ) , m<n , b) mₚ nₚ refl →
@@ -361,18 +357,18 @@ module Part3 -- Basic Analysis
                                                               (m , n , m<n , b , r)})
                                                           (λ {(m , n , m<n , b) nₚ r →
                                                               basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n × Σ[ nₚ ∈ ℕ ] (zero , suc nₚ) ≡ (m , n)) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
-                                                                          (λ {(m , n , m<n , b , nₚ , refl) m₀ n₀ refl refl → step (base refl)})
-                                                                          (λ {(m , n , m<n , b , nₚ , refl) m₀ n₀ m₀≤n₀ refl → let ((_ , b') , _) = b in step (b' (zero , nₚ , m₀≤n₀) refl)})
+                                                                           (λ {(m , n , m<n , b , nₚ , refl) m₀ n₀ refl  refl → step (base refl)})
+                                                                           (λ {(m , n , m<n , b , nₚ , refl) m₀ n₀ m₀≤n₀ refl → let ((_ , b') , _) = b in step (b' (zero , nₚ , m₀≤n₀) refl)})
                                                               (m , n , m<n , b , nₚ , r)})
                                                           (λ {(m , n , m<n , b) mₚ r →
                                                               basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n × Σ[ mₚ ∈ ℕ ] (suc mₚ , zero) ≡ (m , n)) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
-                                                                          (λ {(m , n , m<n , b , mₚ , refl) m₀ n₀ () refl})
-                                                                          (λ {(m , n , m<n , b , mₚ , refl) m₀ n₀ m₀≤n₀ ()})
+                                                                           (λ {(m , n , m<n , b , mₚ , refl) m₀ n₀ () refl})
+                                                                           (λ {(m , n , m<n , b , mₚ , refl) m₀ n₀ m₀≤n₀ ()})
                                                               (m , n , m<n , b , mₚ , r)})
                                                           (λ {(m , n , m<n , b) mₚ nₚ r →
                                                               basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n × Σ[ mₚ ∈ ℕ ] Σ[ nₚ ∈ ℕ ] (suc mₚ , suc nₚ) ≡ (m , n)) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
-                                                                          (λ {(m , n , m<n , b , mₚ , nₚ , refl) m₀ n₀ refl refl → step (base refl)})
-                                                                          (λ {(m , n , m<n , b , mₚ , nₚ , refl) m₀ n₀ m₀≤n₀ refl → let ((_ , b') , _) = b in step (b' (suc mₚ , nₚ , m₀≤n₀) refl)})
+                                                                           (λ {(m , n , m<n , b , mₚ , nₚ , refl) m₀ n₀ refl  refl → step (base refl)})
+                                                                           (λ {(m , n , m<n , b , mₚ , nₚ , refl) m₀ n₀ m₀≤n₀ refl → let ((_ , b') , _) = b in step (b' (suc mₚ , nₚ , m₀≤n₀) refl)})
                                                               (m , n , m<n , b , mₚ , nₚ , r)})
                                          (m , n , m<n , b)})
                      (m , n , m<n)
@@ -380,30 +376,77 @@ module Part3 -- Basic Analysis
   -- Swapping of nested case analyses
   -- (Now the methods of the first basic-case-ℕPair can be individually rewritten to the same one modulo substitution.)
   wk₁．₅ : (m n : ℕ) → suc m ≤ n → m ≤ n
-  wk₁．₅ m n m<n = let P = λ (Dm , Dn) → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn) ≡ (suc m , n) → m ≤ n
-                  in basic-rec-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (suc m , n))
-                                     (λ {(m , n , m<n) .(suc m) .n b refl →
-                                         basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
-                                                      (λ {(m , n , m<n , b) m₀ n₀ m₀≡n₀ r' →
-                                                          basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-ℕPair P (suc m) n × Σ[ m₀ ∈ ℕ ] Σ[ n₀ ∈ ℕ ] Σ[ m₀≡n₀ ∈ m₀ ≡ n₀ ] (m₀ , n₀ , base m₀≡n₀) ≡ (suc m , n , m<n)) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , m₀≡n₀ , refl)       refl → base refl})
-                                                                          --  (λ {(m , n , m<n , b , m₀ , n₀ , refl , refl)       r → step (base refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , refl  , refl)    nₚ refl → step (base refl)})
-                                                                          --  (λ {(m , n , m<n , b , m₀ , n₀ , refl , refl)    nₚ r → step (base refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , ()    , refl) mₚ    refl})
-                                                                          --  (λ {(m , n , m<n , b , m₀ , n₀ , refl , refl) mₚ    r → step (base refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , refl  , refl) mₚ nₚ refl → step (base refl)})
-                                                                          --  (λ {(m , n , m<n , b , m₀ , n₀ , refl , refl) mₚ nₚ r → step (base refl)})
-                                                          (m , n , m<n , b , m₀ , n₀ , m₀≡n₀ , r')})
-                                                      (λ {(m , n , m<n , b) m₀ n₀ m₀≤n₀ r' →
-                                                          basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-ℕPair P (suc m) n × Σ[ m₀ ∈ ℕ ] Σ[ n₀ ∈ ℕ ] Σ[ m₀≤n₀ ∈ m₀ ≤ n₀ ] (m₀ , suc n₀ , step m₀≤n₀) ≡ (suc m , n , m<n)) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl)       rₚ → let ((_ , b') , _) = b in step (b' (m , n₀ , m₀≤n₀) refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl)    nₚ rₚ → let ((_ , b') , _) = b in step (b' (m , n₀ , m₀≤n₀) refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl  ) mₚ    rₚ → let ((_ , b') , _) = b in step (b' (m , n₀ , m₀≤n₀) refl)})
-                                                                           (λ {(m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl) mₚ nₚ rₚ → let ((_ , b') , _) = b in step (b' (m , n₀ , m₀≤n₀) refl)})
-                                                          (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , r')})
-                                         (m , n , m<n , b)})
-                    (m , n , m<n)
+  wk₁．₅ m n m<n =
+    let P = λ (Dm , Dn) → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn) ≡ (suc m , n) → m ≤ n
+    in basic-rec-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (suc m , n))
+         (λ { (m , n , m<n) .(suc m) .n b refl →
+                basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
+                  (λ { (m , n , m<n , b) m₀ n₀ m₀≡n₀ r' →
+                         basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-ℕPair P (suc m) n × Σ[ m₀ ∈ ℕ ] Σ[ n₀ ∈ ℕ ] Σ[ m₀≡n₀ ∈ m₀ ≡ n₀ ] (m₀ , n₀ , base m₀≡n₀) ≡ (suc m , n , m<n)) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
+                           (λ { (m , n , m<n , b , m₀ , n₀ , m₀≡n₀ , refl)       refl → base refl })
+                          --  (λ { (m , n , m<n , b , m₀ , n₀ , refl , refl)       r → step (base refl) })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , refl  , refl)    nₚ refl → step (base refl) })
+                          --  (λ { (m , n , m<n , b , m₀ , n₀ , refl , refl)    nₚ r → step (base refl) })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , ()    , refl) mₚ    refl })
+                          --  (λ { (m , n , m<n , b , m₀ , n₀ , refl , refl) mₚ    r → step (base refl) })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , refl  , refl) mₚ nₚ refl → step (base refl) })
+                          --  (λ { (m , n , m<n , b , m₀ , n₀ , refl , refl) mₚ nₚ r → step (base refl) })
+                           (m , n , m<n , b , m₀ , n₀ , m₀≡n₀ , r') })
+                  (λ { (m , n , m<n , b) m₀ n₀ m₀≤n₀ r' →
+                         basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-ℕPair P (suc m) n × Σ[ m₀ ∈ ℕ ] Σ[ n₀ ∈ ℕ ] Σ[ m₀≤n₀ ∈ m₀ ≤ n₀ ] (m₀ , suc n₀ , step m₀≤n₀) ≡ (suc m , n , m<n)) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
+                           (λ { (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , ()  )       refl })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl)    nₚ refl → let ((_ , b') , _) = b in step (b' (zero   , nₚ , m₀≤n₀) refl) })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , ()  ) mₚ    refl })
+                           (λ { (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , refl) mₚ nₚ refl → let ((_ , b') , _) = b in step (b' (suc mₚ , nₚ , m₀≤n₀) refl) })
+                           (m , n , m<n , b , m₀ , n₀ , m₀≤n₀ , r')})
+                  (m , n , m<n , b)})
+         (m , n , m<n)
 
---   -- Difficulty: the laws hold at the basic analysis level (in particular the ‘delayed constraints’ transformation), not the pattern matching level,
---   --             and they are quite tedious.
+  -- Difficulty: the laws hold at the basic analysis level (in particular the ‘delayed constraints’ transformation), not the pattern matching level,
+  --             and they are quite tedious.
+
+module Part6 -- Fording to the rescue
+  where
+
+  -- 3. Eliminate Redundant Case Analysis (for step; what about base?)
+  wk₃ : (m n : ℕ) → suc m ≤ n → m ≤ n
+  wk₃  zero    zero          (base _)    = base refl
+  wk₃  zero   (suc .zero)    (base refl) = step (base refl)
+  wk₃ (suc m)  zero          (base ())
+  wk₃ (suc m) (suc .(suc m)) (base refl) = step (base refl)
+  wk₃ m       (suc n)        (step m<n)  = step (wk₃ m n m<n)
+
+  -- 4. Fording to allow unified goal types (with different constraints)
+  wk₄ : (m n : ℕ) → suc m ≤ n → (m' n' : ℕ) → m' ≡ m → n' ≡ n → m ≤ n
+  wk₄ m n (base _)     zero     zero           refl refl = base refl
+  wk₄ m n (base refl)  zero    (suc .zero)     refl refl = step (base refl)
+  wk₄ m n (base ())   (suc m')  zero           refl refl
+  wk₄ m n (base refl) (suc m') (suc .(suc m')) refl refl = step (base refl)
+  wk₄ m n (step m<n)  m'       (suc n')        refl refl = step (wk₄ _ _ m<n m' n' refl refl)
+
+  -- 5. Rewrite equationally
+  wk₅ : (m n : ℕ) → suc m ≤ n → (m' n' : ℕ) → m' ≡ m → n' ≡ n → m ≤ n
+  wk₅ m n (base refl)  zero     zero    meq  neq  = step (base refl)
+  wk₅ m n (base refl)  zero    (suc n') meq  neq  = step (base refl)
+  wk₅ m n (base refl) (suc m')  zero    meq  neq  = step (base refl)
+  wk₅ m n (base refl) (suc m') (suc n') meq  neq  = step (base refl)
+  wk₅ m n (step m<n)  m'       (suc n') refl refl = step (wk₅ _ _ m<n m' n' refl refl)
+
+  -- 6. Eliminate Redundant Case Analysis for base
+  wk₆ : (m n : ℕ) → suc m ≤ n → (m' n' : ℕ) → m' ≡ m → n' ≡ n → m ≤ n
+  wk₆ m n (base refl) m' n'       meq  neq  = step (base refl)
+  wk₆ m n (step m<n)  m' (suc n') refl refl = step (wk₆ _ _ m<n m' n' refl refl)
+
+  -- 7. Rewrite equationally (matching refl again)
+  wk₇ : (m n : ℕ) → suc m ≤ n → (m' n' : ℕ) → m' ≡ m → n' ≡ n → m ≤ n
+  wk₇ m n (base refl) m' n'       refl refl = step (base refl)
+  wk₇ m n (step m<n)  m' (suc n') refl refl = step (wk₇ _ _ m<n m' n' refl refl)
+
+  -- 8. Unfording
+  wk : (m n : ℕ) → suc m ≤ n → m ≤ n
+  wk m n       (base refl) = step (base refl)
+  wk m (suc n) (step m<n)  = step (wk m n m<n)
+
+  -- Requires K
+  rewriteEqArg : {P : A → A → Set} {x y : A} (f : x ≡ y → P x y) → (eq eq' : x ≡ y) → f eq ≡ f eq'
+  rewriteEqArg f refl refl = refl
