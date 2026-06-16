@@ -267,15 +267,16 @@ module Part4 -- Translation to basic analysis operators (eliminating dependent p
     -- wk m .(suc n) (step {n} m<n) = step (wk m n m<n)
 
     wk : (m n : ℕ) → suc m ≤ n → m ≤ n
-    wk m n m<n = let P : (m n : ℕ) → m ≤ n → Set
-                     P = λ Dm Dn Dm<n → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn , Dm<n) ≡ (suc m , n , m<n) → m ≤ n
-                 in basic-rec-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n) → (suc m , n , m<n))
-                      (λ {(m , n , m<n) m' n' m'<n' b refl →
-                          basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-≤ P (suc m) n m<n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
-                                       (λ {(m , n , m<n , b) m₀ n₀ refl refl → step (base refl)})
-                                       (λ {(m , .(suc n₀) , .(step m₀≤n₀) , b) m₀ n₀ m₀≤n₀ refl → let (_ , b') = b in step (b' (m , n₀ , m₀≤n₀) refl)})
-                                       (m , n , m<n , b)})
-                      (m , n , m<n)
+    wk m n m<n =
+      let P : (m n : ℕ) → m ≤ n → Set
+          P = λ Dm Dn Dm<n → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn , Dm<n) ≡ (suc m , n , m<n) → m ≤ n
+      in  basic-rec-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n) → (suc m , n , m<n))
+            (λ {(m , n , m<n) .(suc m) .n .m<n b refl →
+                basic-case-≤ (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ m<n ∈ suc m ≤ n ] Below-≤ P (suc m) n m<n) (λ (m , n , _) → m ≤ n) (λ (m , n , m<n , _) → (suc m , n , m<n))
+                  (λ {(m , n     , base refl , b) .(suc m) .n .refl refl → step (base refl) })
+                  (λ {(m , suc n , step m≤n  , b) .(suc m) .n .m≤n  refl → let (_ , b') = b in step (b' (m , n , m≤n) refl) })
+                 (m , n , m<n , b) })
+           (m , n , m<n)
 
 module Part5 -- Laws/transformations
   where
