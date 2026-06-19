@@ -346,8 +346,8 @@ module Part5 -- Laws/transformations
                     (m , n , m<n)
 
   -- Delayed constraints
-  wk₁．₄ : (m n : ℕ) → suc m ≤ n → m ≤ n
-  wk₁．₄ m n m<n = let P = λ (Dm , Dn) → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn) ≡ (suc m , n) → m ≤ n
+  wk₁.₄ : (m n : ℕ) → suc m ≤ n → m ≤ n
+  wk₁.₄ m n m<n = let P = λ (Dm , Dn) → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn) ≡ (suc m , n) → m ≤ n
                   in basic-rec-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (suc m , n))
                                      (λ {(m , n , m<n) .(suc m) .n b refl →
                                          basic-case-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n × Below-ℕPair P (suc m) n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (m , n))
@@ -376,8 +376,8 @@ module Part5 -- Laws/transformations
 
   -- Swapping of nested case analyses
   -- (Now the methods of the first basic-case-ℕPair can be individually rewritten to the same one modulo substitution.)
-  wk₁．₅ : (m n : ℕ) → suc m ≤ n → m ≤ n
-  wk₁．₅ m n m<n =
+  wk₁.₅ : (m n : ℕ) → suc m ≤ n → m ≤ n
+  wk₁.₅ m n m<n =
     let P = λ (Dm , Dn) → ((m , n , m<n) : Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) → (Dm , Dn) ≡ (suc m , n) → m ≤ n
     in basic-rec-ℕPair (Σ[ m ∈ ℕ ] Σ[ n ∈ ℕ ] suc m ≤ n) (λ (m , n , _) → m ≤ n) (λ (m , n , _) → (suc m , n))
          (λ { (m , n , m<n) .(suc m) .n b refl →
