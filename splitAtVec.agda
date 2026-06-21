@@ -68,7 +68,7 @@ lemma₀ (x ∷ xs) = {! cong (_∷ʳ x) (lemma₀ xs)  !}
 
 reverseSpec : ∀ m {n} (xs : Vec A (m + n)) → let (ys , zs) = split m {n = n} xs in reverse {m = m} {n = zero} ys ++ reverse {m = zero} {n = n} zs ≡ drop n (reverse {m = m} {n = n} xs) ++ take n {n = m} (reverse {m = m} {n = n} xs)
 reverseSpec  zero    []      = refl
-reverseSpec  zero   (x ∷ xs) = rotate-reverse (x ∷ xs)
+reverseSpec  zero   (x ∷ xs) = lemma₀ (x ∷ xs)
 reverseSpec (suc m) (x ∷ xs) = {! reverseSpec m xs  !}
 
 reverseSpec' : ∀ {m n ys zs} {xs : Vec A (m + n)} → Split m {n = n} xs ys zs → reverse {m = m} {n = zero} ys ++ reverse {m = zero} {n = n} zs ≡ drop n (reverse {m = m} {n = n} xs) ++ take n {n = m} (reverse {m = m} {n = n} xs)

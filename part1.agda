@@ -1,5 +1,7 @@
 -- {-# OPTIONS --safe --with-K --large-indices --no-forced-argument-recursion #-}
+{-# OPTIONS -vtc.cover.splittree:10 #-}
 
+module Part1 where
 open import Data.Bool using (Bool; true; false)
 open import Data.Nat
 open import Data.Nat.Properties using  (_≟_; <-pred; ≤-step; ≤-trans; ≤-reflexive; ≤-pred; <⇒≤; <⇒≱; ≤⇒≯; ≤∧≢⇒<; 1+n≰n; 1+n≢n; n≮n; 0<1+n; m<1+n⇒m≤n; suc-injective; ≤-refl)
@@ -27,12 +29,12 @@ variable
 no-suc-eq : ∀ n → suc n ≡ suc (suc n) → ⊥
 no-suc-eq n ()
 
-no-suc-length-eq : ∀ (xs : List A) → suc (length xs) ≡ suc (suc (length xs)) → ⊥
-no-suc-length-eq xs eq = {!   !} 
+no-suc-eq' : ∀ (xs : List A) → suc (length xs) ≡ suc (suc (length xs)) → ⊥
+no-suc-eq' xs eq = ⊥-elim (1+n≢n (sym eq)) 
 
 -- (2) 1 ≢ 1 will lead to successful unification
 1≢1 : 1 ≢ 1 → ⊥
-1≢1 neq = {!   !}
+1≢1 neq = ⊥-elim (neq refl)
 
 -- (3) non-equality cannot automatically unify
 2≢3 : 2 ≡ 3 → ⊥
@@ -41,6 +43,6 @@ no-suc-length-eq xs eq = {!   !}
 3≰2 : 3 ≤ 2 → ⊥
 3≰2 (s≤s (s≤s ()))
 
-no-n-ineq : ∀ n → suc (suc (suc n)) ≤ suc (suc n) → ⊥
-no-n-ineq zero (s≤s (s≤s ()))
-no-n-ineq (suc n) (s≤s (s≤s (s≤s ineq))) = ⊥-elim (1+n≰n ineq)
+no-ineq : ∀ n → suc (suc (suc n)) ≤ suc (suc n) → ⊥
+no-ineq  zero   (s≤s (s≤s ()))
+no-ineq (suc n) (s≤s (s≤s (s≤s ineq))) = ⊥-elim (1+n≰n ineq)

@@ -1,4 +1,4 @@
--- {-# OPTIONS --safe --with-K --large-indices --no-forced-argument-recursion #-}
+{-# OPTIONS --allow-unsolved-metas #-}
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Nat
@@ -88,10 +88,10 @@ lemma₀ : ∀ {k : ℕ} {xs : Vec A n} → k ≤ n → k ≢ n → suc k ≤ n
 lemma₀ k≤len k≢len = ≤∧≢⇒< k≤len k≢len
 
 ch : {A : Set} {n : ℕ} → (k : ℕ) → (xs : Vec A n) → (k≤len : k ≤ n) → BTree (Vec A k) n k
-ch zero xs k≤len = tip0 []
+ch  zero    xs      k≤len = tip0 []
 ch (suc k) (x ∷ xs) k≤len with k ≟ length xs
-... | yes refl    = tipN (x ∷ xs)
-... | no  k≢len   = node (mapB (x ∷_) (ch k xs (≤-pred k≤len))) (ch (suc k) xs (lemma₀ {_} {_} {k} {xs} (≤-pred k≤len) k≢len))
+... | yes refl            = tipN (x ∷ xs)
+... | no  k≢len           = node (mapB (x ∷_) (ch k xs (≤-pred k≤len))) (ch (suc k) xs (lemma₀ {_} {_} {k} {xs} (≤-pred k≤len) k≢len))
 
 -- ------------------------------
 -- Part 2. Function v.s. Relation
@@ -111,7 +111,7 @@ ch-to-Ch                                   {t = tip0 .[]}                       
 ch-to-Ch {k = suc k} {xs = x₀ ∷ xs}        {t = tipN x}                                      eq   with k ≟ length xs
 ch-to-Ch {k = suc k} {x₀ ∷ xs}     {_}     {tipN .(x₀ ∷ xs)}                                 refl | yes refl = suc≡
 ch-to-Ch {k = suc k} {xs = x ∷ xs}         {t = node t u}                                    eq   with k ≟ length xs
-ch-to-Ch {_} {_} {suc k} {x ∷ xs}  {_} {node t u} () | yes refl
+ch-to-Ch {_} {_} {suc k} {x ∷ xs}  {_}     {node t u} () | yes refl
 ch-to-Ch {k = suc k} {x ∷ xs}      {k≤len} {node t u} refl | no  neq  = suc≢ {k = k} {x = x} {xs = xs} (λ x₁ → neq (suc-injective x₁)) (ch-to-Ch refl) (ch-to-Ch refl)
 
 -- helper functtion
@@ -122,7 +122,7 @@ ch-inverse {n = suc k} {xs = x ∷ xs}                             {ch = suc≡}
 ch-inverse {n = suc k} {xs = x ∷ xs}                             {ch = suc≡}            | no  neq  = ⊥-elim (neq refl)
 ch-inverse {k = suc k} {xs = x ∷ xs}                             {ch = suc≢ x₀ ch₁ ch₂} with k ≟ length xs
 ch-inverse {k = suc k} {xs = x ∷ xs}                             {ch = suc≢ x₀ ch₁ ch₂} | yes refl = ⊥-elim (x₀ refl)
-ch-inverse {k = suc k} {xs = x ∷ xs} {k≤len = s≤s k≤len} {t = t} {ch = suc≢ x₀ ch₁ ch₂} | no  neq  = {! (cong₂ node (cong (mapB (_∷_ x)) (Ch-to-ch ch₁)) (Ch-to-ch ch₂))  !}
+ch-inverse {k = suc k} {xs = x ∷ xs} {k≤len = s≤s k≤len} {t = t} {ch = suc≢ x₀ ch₁ ch₂} | no  neq  = {!   !}
 
 Ch-inverse : ∀ {n k} {xs : Vec A n} {k≤len : k ≤ n} {t : BTree (Vec A k) n k} → {eq : ch k xs k≤len ≡ t} → Ch-to-ch (ch-to-Ch eq) ≡ eq 
 Ch-inverse                           {t = tip0 .[]}        {eq = refl} = refl
@@ -153,6 +153,47 @@ up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node (tip0 x₀) x₁)) = nod
 up {k = suc (suc k)} {0<k} {k<n} (node (tipN x) u)                     = ⊥-elim (n≮n (suc (suc k)) k<n)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) (tipN y))          = tipN ((unTip (up {_} {_} {_} {0<1+n} {(<-pred k<n)} t)) ∷ʳ y)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) u@(node _ u'))     = node (zipBW (_∷ʳ_) (up {_} {_} {_} {0<1+n} {(s<s⁻¹ k<n)} t) u) (up {_} {_} {_} {0<1+n} {(m≤n⇒m<1+n (bounded u'))} u)
+
+
+
+-- 1. The graph function packaging both the result and its proof
+graph_ch : ∀ {A : Set} {n : ℕ} → (k : ℕ) → (xs : Vec A n) → Σ[ t ∈ BTree (Vec A k) n k ] Ch k xs t
+graph_ch {A} {n}      zero    xs = (tip0 []) , zero
+graph_ch {A} {zero}  (suc k)  [] = ⊥-elim {!   !}
+graph_ch {A} {suc n} (suc k) (x ∷ xs) with suc k ≟ length (x ∷ xs)
+... | yes refl                   = tipN (x ∷ xs) , suc≡
+... | no k≢len with graph_ch {A} {n} k xs | graph_ch {A} {n} (suc k) xs
+... | (t , pt) | (u , pu)        = node (mapB (x ∷_) t) u , suc≢ k≢len pt pu
+
+-- 2. upSpec′ via the graph
+upSpec' : ∀ {A : Set} {n : ℕ} → (k : ℕ) → (xs : Vec A n)
+        → let (t  , _) = graph_ch k xs
+              (t' , _) = graph_ch (suc k) xs
+          in up t ≡ mapB subs t'
+upSpec' k xs with graph_ch k xs | graph_ch (suc k) xs
+upSpec' k xs | (t , d) | (t' , d') = {!   !}
+
+upSpec'' : ∀ {A : Set} {n : ℕ} → (k : ℕ) → (xs : Vec A n)
+         → {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
+         → Ch k xs t → Ch (suc k) xs t' → up t ≡ mapB subs t'
+upSpec'' .zero xs zero d' = {!   !}
+upSpec'' .(suc _) xs suc≡ d' = {!   !}
+upSpec'' .(suc _) .(_ ∷ _) (suc≢ x d d₁) d' = {!   !}
+-- upSpec' k xs with (_ , d) ← graph_ch k xs | (_ , d') ← graph_ch (suc k) xs = upSpec'' k xs d d'
+-- upSpec' {A} {.zero} zero [] = {!   !}
+-- upSpec' {A} {.(suc _)} zero (x ∷ xs) = {!   !}
+-- upSpec' {A} {.zero} (suc k) [] = {!   !}
+-- upSpec' {A} {.(suc _)} (suc k) (x ∷ xs) with suc k ≟ length (x ∷ xs)
+-- ... | yes refl = {!   !}
+-- ... | no  neq  = {!   !}
+
+-- with k ≟ length xs
+-- ... | yes refl = {!   !}
+-- ... | no k≢len = {!   !}
+
+-- with graph_ch {A} {n} k xs | graph_ch {A} {n} (suc k) xs
+-- ... | (t , _) | (u , _) = cong₂ node (upSpec' k xs) (upSpec' (suc k) xs)
+
 
 -- upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
 --        → Ch k xs t → Ch (suc k) xs t' → 2 ≤ suc k → (suc-k≤len : suc k ≤ n) → up t ≡ mapB subs t'

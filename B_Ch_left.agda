@@ -112,28 +112,28 @@ ch (suc k) (x ∷ xs) k≤len with k ≟ length xs
 up : {k : ℕ} → {z≤k : 0 < k} → {k < n} → BTree A n k → BTree (Vec A (suc k)) n (suc k) 
 up {k = suc k}       {0<k} {k<n} (tipN x)                             = ⊥-elim (n≮n (suc k) k<n)
 up                   {0<k} {k<n} (node (tip0 x) (tipN y))             = tipN (x ∷ y ∷ [])
-up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node (tip0 x₀) x₁)) = node (mapB (λ q → x ∷ q ∷ []) u) (up {_} {_} {_} {0<k} {m≤n⇒m<1+n (bounded x₁)} u)
+up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node x₀ x₁)) = node (mapB (λ q → x ∷ q ∷ []) u) (up {_} {_} {_} {0<k} {m≤n⇒m<1+n (bounded x₁)} u)
 up {k = suc (suc k)} {0<k} {k<n} (node (tipN x) u)                    = ⊥-elim (n≮n (suc (suc k)) k<n)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) (tipN y))         = tipN ((unTip (up {_} {_} {_} {0<1+n} {(<-pred k<n)} t)) ∷ʳ y)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) u@(node _ u'))    = node (zipBW (_∷ʳ_) (up {_} {_} {_} {0<1+n} {(s<s⁻¹ k<n)} t) u) (up {_} {_} {_} {0<1+n} {(m≤n⇒m<1+n (bounded u'))} u)
 
-upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
-       → Ch k xs t → Ch (suc k) xs t' → 2 ≤ suc k → (suc-k≤len : suc k ≤ n) → up t ≡ mapB subs t'
--- left : tip0 
-upSpec zero ch' (s≤s ()) suc-k≤len
--- left : tipN → up case 1.
-upSpec suc≡ ch' 2≤suc-k suc-k≤len = ⊥-elim (1+n≰n suc-k≤len)
--- left : node t u → def. of up
--- node tip0 tipN → up case 2.
-upSpec {xs = x₀ ∷ x₁ ∷ []} (suc≢ x  zero              suc≡)                   suc≡              2≤suc-k suc-k≤len = refl
-upSpec                     (suc≢ x  zero              suc≡)                  (suc≢ x₁ ch' ch'') 2≤suc-k suc-k≤len = ⊥-elim (x₁ refl)
--- node tip0 (node t u) → up case 3.
-upSpec                     (suc≢ x  zero              ch@(suc≢ x₁ zero ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k suc-k≤len = cong₂ node {!   !}  (upSpec ch ch'' ≤-refl (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x₂)))
--- node tipN (node t u) → up case 4.
-upSpec                     (suc≢ x  suc≡             (suc≢ x₁ ch₂ ch₃))       ch'               2≤suc-k suc-k≤len = ⊥-elim (1+n≰n suc-k≤len)
--- node (node t u) tipN → up case 5.
-upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  suc≡)                   suc≡              2≤suc-k suc-k≤len = cong tipN {!   !}
-upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  suc≡)                  (suc≢ x₂ ch' ch'') 2≤suc-k suc-k≤len = ⊥-elim (x₂ refl)
--- node (node t u) (node t' u') → up case 6.
-upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃) (suc≢ x₂ ch₂ ch₄))       suc≡              2≤suc-k suc-k≤len = ⊥-elim (x₂ refl)
-upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  ch@(suc≢ x₂ ch₂ ch₄))  (suc≢ x₃ ch' ch'') 2≤suc-k suc-k≤len = cong₂ node {!   !} (upSpec ch ch'' (s≤s (s≤s z≤n)) (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x₃)))
+-- upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
+--        → Ch k xs t → Ch (suc k) xs t' → 2 ≤ suc k → (suc-k≤len : suc k ≤ n) → up t ≡ mapB subs t'
+-- -- left : tip0 
+-- upSpec                      zero                                              ch'              (s≤s ()) suc-k≤len -- In B_Ch_right, this case will be split into 2 cases (1 & 5).
+-- -- left : tipN → up case 1.
+-- upSpec                      suc≡                                              ch'               2≤suc-k suc-k≤len = ⊥-elim (1+n≰n suc-k≤len) -- Same with B_Ch_right case 6.
+-- -- left : node t u → def. of up
+-- -- node tip0 tipN → up case 2.
+-- upSpec {xs = x₀ ∷ x₁ ∷ []} (suc≢ x  zero              suc≡)                   suc≡              2≤suc-k suc-k≤len = refl -- Same with B_Ch_right case 2.
+-- upSpec                     (suc≢ x  zero              suc≡)                  (suc≢ x₁ ch' ch'') 2≤suc-k suc-k≤len = ⊥-elim (x₁ refl) -- Same with B_Ch_right case 7.
+-- -- node tip0 (node t u) → up case 3.
+-- upSpec                     (suc≢ x  zero              ch@(suc≢ x₁ zero ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k suc-k≤len = cong₂ node {!   !}  (upSpec ch ch'' ≤-refl (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x₂))) -- Same with B_Ch_right case 8.
+-- -- node tipN (node t u) → up case 4.
+-- upSpec                     (suc≢ x  suc≡             (suc≢ x₁ ch₂ ch₃))       ch'               2≤suc-k suc-k≤len = ⊥-elim (1+n≰n suc-k≤len) -- Same with B_Ch_right case 9.
+-- -- node (node t u) tipN → up case 5.
+-- upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  suc≡)                   suc≡              2≤suc-k suc-k≤len = cong tipN {!   !} -- Same with B_Ch_right case 3.
+-- upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  suc≡)                  (suc≢ x₂ ch' ch'') 2≤suc-k suc-k≤len = ⊥-elim (x₂ refl) -- Same with B_Ch_right case 10. 
+-- -- node (node t u) (node t' u') → up case 6.
+-- upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃) (suc≢ x₂ ch₂ ch₄))       suc≡              2≤suc-k suc-k≤len = ⊥-elim (x₂ refl) -- Same with B_Ch_right case 4.
+-- upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₃)  ch@(suc≢ x₂ ch₂ ch₄))  (suc≢ x₃ ch' ch'') 2≤suc-k suc-k≤len = cong₂ node {!   !} (upSpec ch ch'' (s≤s (s≤s z≤n)) (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x₃))) -- Same with B_Ch_right case 11.

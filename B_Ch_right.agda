@@ -94,6 +94,19 @@ data Ch {A : Set} : (k : ℕ) → Vec A n → BTree (Vec A k) n k → Set where
        → Ch (suc k) xs u
        → Ch (suc k) (x ∷ xs) (node (mapB (x ∷_) t) u)
 
+tree-eq : ∀ {n : ℕ} {xs : Vec A m} {t t' : BTree (Vec A n) m n} → Ch n xs t → Ch n xs t' → t ≡ t'
+tree-eq                 zero            zero              = refl
+tree-eq                 suc≡            suc≡              = refl
+tree-eq                 suc≡           (suc≢ x  ch' ch'') = ⊥-elim (x refl) 
+tree-eq                (suc≢ x ch ch₁)  suc≡              = ⊥-elim (x refl)
+tree-eq {xs = x₂ ∷ xs} (suc≢ x ch ch₁) (suc≢ x₁ ch' ch'') = cong₂ node (cong (mapB (x₂ ∷_)) (tree-eq ch ch')) (tree-eq ch₁ ch'')
+
+Ch-to-tree : ∀ {xs : Vec A n} {t : BTree (Vec A k) n k} → Ch k xs t → BTree (Vec A k) n k
+Ch-to-tree {t = t} ch = t
+-- Ch-to-tree zero = tip0 []
+-- Ch-to-tree {xs = xs} suc≡ = tipN xs
+-- Ch-to-tree {xs = x ∷ xs} (suc≢ x₀ ch ch₁) = node (mapB (x ∷_) (Ch-to-tree ch)) (Ch-to-tree ch₁)
+
 subs : Vec A (suc n) → Vec (Vec A n) (suc n)
 subs (x ∷ []) = [] ∷ []
 subs (x ∷ xs@(y ∷ ys)) = (map (x ∷_) (subs xs)) ∷ʳ xs
@@ -104,9 +117,6 @@ subs-cons1 (x ∷ []) = refl
 lemma₀ : ∀ {k : ℕ} {xs : Vec A n} → k ≤ n → k ≢ n → suc k ≤ n
 lemma₀ k≤len k≢len = ≤∧≢⇒< k≤len k≢len
 
--- lemma₁ : ∀ {k n : ℕ} {x : A} {xs : Vec A n} → k ≡ n → BTree (Vec A (suc k)) (suc n) (suc k)
-
-
 ch : {A : Set} {n : ℕ} → (k : ℕ) → (xs : Vec A n) → (k≤len : k ≤ n) → BTree (Vec A k) n k
 ch zero xs k≤len = tip0 []
 ch (suc k) (x ∷ xs) k≤len with k ≟ length xs
@@ -114,26 +124,26 @@ ch (suc k) (x ∷ xs) k≤len with k ≟ length xs
 ... | no  k≢len   = node (mapB (x ∷_) (ch k xs (≤-pred k≤len))) (ch (suc k) xs (lemma₀ {_} {_} {k} {xs} (≤-pred k≤len) k≢len))
 
 up : {k : ℕ} → {0 < k} → {k < n} → BTree A n k → BTree (Vec A (suc k)) n (suc k)
-up {k = suc k}       {0<k} {k<n} (tipN x)                          = ⊥-elim (n≮n (suc k) k<n)
-up                   {0<k} {k<n} (node (tip0 x) (tipN y))          = tipN (x ∷ y ∷ [])
-up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node (tip0 x₀) x₁))      = node (mapB (λ q → x ∷ q ∷ []) u) (up {_} {_} {_} {0<k} { m≤n⇒m<1+n (bounded x₁) } u)
-up {k = suc (suc k)} {0<k} {k<n} (node (tipN x) u)                 = ⊥-elim (n≮n (suc (suc k)) k<n)
-up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) (tipN y))      = tipN ((unTip (up {_} {_} {_} {0<1+n} {(<-pred k<n)} t)) ∷ʳ y)
-up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) u@(node _ u')) = node (zipBW (_∷ʳ_) (up {_} {_} {_} {0<1+n} {(s<s⁻¹ k<n)} t) u) (up {_} {_} {_} {0<1+n} {(m≤n⇒m<1+n (bounded u'))} u)
+up {k = suc k}       {0<k} {k<n} (tipN x)                              = ⊥-elim (n≮n (suc k) k<n)
+up                   {0<k} {k<n} (node (tip0 x) (tipN y))              = tipN (x ∷ y ∷ [])
+up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node (tip0 x₀) x₁)) = node (mapB (λ q → x ∷ q ∷ []) u) (up {_} {_} {_} {0<k} {m≤n⇒m<1+n (bounded x₁)} u)
+up {k = suc (suc k)} {0<k} {k<n} (node (tipN x) u)                     = ⊥-elim (n≮n (suc (suc k)) k<n)
+up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) (tipN y))          = tipN ((unTip (up {_} {_} {_} {0<1+n} {(<-pred k<n)} t)) ∷ʳ y)
+up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) u@(node _ u'))     = node (zipBW (_∷ʳ_) (up {_} {_} {_} {0<1+n} {(s<s⁻¹ k<n)} t) u) (up {_} {_} {_} {0<1+n} {(m≤n⇒m<1+n (bounded u'))} u)
 
 
 upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
-       → Ch k xs t → Ch (suc k) xs t' → (2≤suc-k : 2 ≤ suc k) → (suc-k≤len : suc k ≤ n) → up {_} {_} {_} { 1+m≤n⇒m<n (≤-pred 2≤suc-k) } {1+m≤n⇒m<n suc-k≤len} t ≡ mapB subs t'
+       → Ch k xs t → Ch (suc k) xs t' → (2≤suc-k : 2 ≤ suc k) → (suc-k≤len : suc k ≤ n) → up {_} {_} {_} {1+m≤n⇒m<n (≤-pred 2≤suc-k)} {1+m≤n⇒m<n suc-k≤len} t ≡ mapB subs t'
 -- Right Ch : tipN
 upSpec                      zero                                               suc≡                              (s≤s ())  suc-k≤len
 upSpec {xs = x₁ ∷ x₂ ∷ []} (suc≢ x  zero             suc≡)                     suc≡                               2≤suc-k  suc-k≤len = refl -- up case 2.
-upSpec                     (suc≢ x (suc≢ x₁ ch₁ ch₂) suc≡)                     suc≡                               2≤suc-k  suc-k≤len = cong tipN {!   !} -- up case 5.
+upSpec {xs = x₀ ∷ xs}      (suc≢ x (suc≢ x₁ ch₁ ch₂) suc≡)                     suc≡                               2≤suc-k  suc-k≤len = cong tipN (cong (_∷ʳ xs) {!   !}) -- up case 5.
 upSpec                     (suc≢ x  ch₁             (suc≢ x₁ ch₂ ch₃))         suc≡                               2≤suc-k  suc-k≤len = ⊥-elim (x₁ refl) -- up case 6.
 -- Right Ch : node t u
 upSpec                      zero                                              (suc≢ x ch' ch'')                  (s≤s ())  suc-k≤len
 upSpec                      suc≡                                              (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = ⊥-elim (1+n≰n suc-k≤len)
 upSpec                     (suc≢ x₁  zero             suc≡)                   (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = ⊥-elim (x refl)
-upSpec                     (suc≢ x₁  zero             ch'@(suc≢ x₂ zero ch₃)) (suc≢ x (suc≢ x₃ zero ch''') ch'')  2≤suc-k  suc-k≤len = cong₂ node (cong₂ node (cong tip0 refl) {!   !}) (upSpec {t = {! ch'  !}} {! ch'  !} ch'' ≤-refl (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x)))
+upSpec {xs = x₄ ∷ x₅ ∷ xs} (suc≢ x₁  zero             ch'@(suc≢ x₂ zero ch₃)) (suc≢ x (suc≢ x₃ zero ch''') ch'')  2≤suc-k  suc-k≤len = cong₂ node (cong₂ node (cong tip0 refl) (trans (mapB-app {t = Ch-to-tree ch₃} (subs-cons1 {x = x₄})) {! trans (sym (mapB-∘ subs (map (x₄ ∷_)) ?)) ? !})) (upSpec {t = {! node (tip0 (x₅ ∷ [])) (Ch-to-tree ch₃)  !}} {! ch'  !} ch'' ≤-refl (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x)))
 upSpec                     (suc≢ x₁  suc≡             ch₂)                    (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = ⊥-elim (1+n≰n suc-k≤len)
 upSpec                     (suc≢ x₁ (suc≢ x₂ ch₁ ch₃) suc≡)                   (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = ⊥-elim (x refl)
-upSpec                     (suc≢ x₁ (suc≢ x₂ ch₁ ch₃) ch@(suc≢ x₃ ch₂ ch₄))   (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = cong₂ node {!   !} (upSpec {t = {!   !}} {! ch  !} ch'' (s≤s (s≤s z≤n)) (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x)))
+upSpec                     (suc≢ x₁ (suc≢ x₂ ch₁ ch₃) ch@(suc≢ x₃ ch₂ ch₄))   (suc≢ x ch'                  ch'')  2≤suc-k  suc-k≤len = cong₂ node {!   !} (upSpec {t = {! Ch-to-tree ch !}} {! ch  !} ch'' (s≤s (s≤s z≤n)) (m<1+n⇒m≤n (≤∧≢⇒< suc-k≤len x)))

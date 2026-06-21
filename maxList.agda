@@ -9,6 +9,7 @@ open import Data.Vec
 -- using (Vec; []; _∷_; _++_; map)
 open import Data.Vec.Properties using (map-∘)
 open import Data.Empty
+open import Data.Maybe hiding (map)
 open import Data.Product hiding (map)
 open import Data.Sum hiding (map)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app; module ≡-Reasoning)
@@ -53,10 +54,15 @@ max-lem₂ {suc m} {suc n} {zero}  = refl
 max-lem₂ {suc m} {suc n} {suc k} = cong suc max-lem₂
 
 maxList : Vec ℕ (suc n) → ℕ
-maxList (x ∷ []) = x
+maxList (x ∷ [])          = x
 maxList (x ∷ xs@(x₁ ∷ _)) = max x (maxList xs)
 
-data MaxList : Vec ℕ (suc n) → ℕ → Set where
+maxListₜ : Vec ℕ n → Maybe ℕ
+maxListₜ  []               = nothing
+maxListₜ (x ∷ [])          = just x
+maxListₜ (x ∷ xs@(x₁ ∷ _)) = just (max x (maxList xs))
+
+data MaxList : Vec ℕ n → ℕ → Set where
     sin : MaxList (x ∷ []) x
     suc : ∀ {n m} {x : ℕ} {xs : Vec ℕ (suc n)}
         → MaxList xs m
@@ -75,6 +81,25 @@ appendSpec {xs = x ∷ []}      {ys = y ∷ y₁ ∷ ys} = refl
 appendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ []}      = trans (cong₂ max refl (appendSpec {xs = x₁ ∷ xs} {ys = y ∷ []})) max-lem₂
 appendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys} = trans (cong₂ max refl (appendSpec {xs = x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys})) max-lem₂ 
 
+-- Since maxListₜ could be nothing (which has type Lift), from-just (maxListₜ xs) may not be an ℕ
+-- Hence cannot apply function "max".
+-- Is there any technique that can embed "with" clause into function type?
+pos : ∀ {xs : Vec ℕ n} {ys : Vec ℕ m} → Set
+pos {xs = xs} {ys = ys} with maxListₜ xs | maxListₜ ys
+... | nothing | _       = ⊥
+... | _       | nothing = ⊥
+... | just x  | just y  = {!   !}
+
+-- f : A → B → C
+-- g : D → A
+-- h : A → D
+
+-- f ∘ (g ∘ h) ≡ (f ∘ g) ∘ h
+
+comp-assoc : ∀ {x : B} (f : A → B) (g : C → A) (h : B → C) → (f ∘ (g ∘ h)) x → ((f ∘ g) ∘ h) x
+comp-assoc f g h = ?
+
+
 appendSpec' : ∀ {xs : Vec ℕ (suc n)} {ys : Vec ℕ (suc m)} → MaxList xs l → MaxList ys r → MaxList (xs ++ ys) k → k ≡ max l r
 appendSpec'  sin      sin      (suc sin)        = refl
 appendSpec'  sin     (suc ml') (suc (suc ml'')) = cong₂ max refl (cong₂ max refl (max-eq ml'' ml')) -- different : need to prove that k ≡ r
@@ -83,15 +108,21 @@ appendSpec' (suc ml) (suc ml') (suc ml'')       = trans (cong₂ max refl (appen
 
 mapAppendSpec : ∀ {xs : Vec ℕ (suc n)} {ys : Vec ℕ (suc m)} → suc (maxList (xs ++ ys)) ≡ maxList (map suc (xs ++ ys))
 mapAppendSpec {xs = x ∷ []}      {ys = y ∷ []}         = refl
-mapAppendSpec {xs = x ∷ []}      {ys = y ∷ ys@(_ ∷ _)} = trans (trans (cong₂ max (refl {x = suc x}) (mapAppendSpec {xs = y ∷ []} {ys = ys})) max-lem₂) (sym max-lem₂)
-mapAppendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ []}         = trans max-suc (cong₂ max (refl {x = suc x}) (mapAppendSpec {xs = x₁ ∷ xs} {ys = y ∷ []}))
-mapAppendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys}    = trans max-suc (cong₂ max (refl {x = suc x}) (mapAppendSpec {xs = x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys}))
+mapAppendSpec {xs = x ∷ []}      {ys = y ∷ ys@(_ ∷ _)} = cong (max (suc x)) (mapAppendSpec {xs = y ∷ []} {ys = ys})
+mapAppendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ []}         = cong (max (suc x)) (mapAppendSpec {xs = x₁ ∷ xs} {ys = y ∷ []})
+mapAppendSpec {xs = x ∷ x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys}    = cong (max (suc x)) (mapAppendSpec {xs = x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys})
 
-mapAppendSpec' : ∀ {xs : Vec ℕ (suc n)} {ys : Vec ℕ (suc m)} → MaxList xs l → MaxList ys r → MaxList (xs ++ ys) k → MaxList (map suc (xs ++ ys)) (suc k)
-mapAppendSpec'                                     sin      sin      (suc sin) = suc sin
-mapAppendSpec' {xs = x ∷ []} {ys = y ∷ ys@(_ ∷ _)} sin     (suc ml') (suc s)   = suc (mapAppendSpec' {xs = y ∷ []} {ys = ys} sin ml' s)
-mapAppendSpec'                                    (suc ml)  sin      (suc s)   = suc (mapAppendSpec' ml sin s)
-mapAppendSpec'                                    (suc ml) (suc ml') (suc s)   = suc (mapAppendSpec' ml (suc ml') s)
+mapAppendSpec' : ∀ {xs : Vec ℕ (suc n)} {ys : Vec ℕ (suc m)} → MaxList (xs ++ ys) k → MaxList (map suc (xs ++ ys)) (suc k)
+mapAppendSpec' {xs = x ∷ []}      {ys = y ∷ []}         (suc sin) = suc sin
+mapAppendSpec' {xs = x ∷ []}      {ys = y ∷ ys@(_ ∷ _)} (suc s)   = suc (mapAppendSpec' {xs = y ∷ []} {ys = ys} s)
+mapAppendSpec' {xs = x ∷ x₁ ∷ xs} {ys = y ∷ []}         (suc s)   = suc (mapAppendSpec' {xs = x₁ ∷ xs} {ys = y ∷ []} s)
+mapAppendSpec' {xs = x ∷ x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys}    (suc s)   = suc (mapAppendSpec' {xs = x₁ ∷ xs} {ys = y ∷ y₁ ∷ ys} s)
+
+-- mapAppendSpec' : ∀ {xs : Vec ℕ (suc n)} {ys : Vec ℕ (suc m)} → MaxList xs l → MaxList ys r → MaxList (xs ++ ys) k → MaxList (map suc (xs ++ ys)) (suc k)
+-- mapAppendSpec'                                     sin      sin      (suc sin) = suc sin
+-- mapAppendSpec' {xs = x ∷ []} {ys = y ∷ ys@(_ ∷ _)} sin     (suc ml') (suc s)   = suc (mapAppendSpec' {xs = y ∷ []} {ys = ys} sin ml' s)
+-- mapAppendSpec'                                    (suc ml)  sin      (suc s)   = suc (mapAppendSpec' ml sin s)
+-- mapAppendSpec'                                    (suc ml) (suc ml') (suc s)   = suc (mapAppendSpec' ml (suc ml') s)
 
 
 

@@ -114,30 +114,41 @@ ch (suc k) (x ∷ xs) k≤len with k ≟ length xs
 ... | no  k≢len  = node (mapB (x ∷_) (ch k xs (≤-pred k≤len))) (ch (suc k) xs (lemma₀ {_} {_} {k} {xs} (≤-pred k≤len) k≢len))
 
 up : {k : ℕ} → {0 < k} → {k < n} → BTree A n k → BTree (Vec A (suc k)) n (suc k)
-up {k = suc k}       {0<k} {k<n} (tipN x)                          = ⊥-elim (n≮n (suc k) k<n)
+up {_} {_} {_} {()} {k<n} (tip0 x)
+up {k = suc k}       {0<k} {k<n} (tipN x)                          = {!   !} 
 up                   {0<k} {k<n} (node (tip0 x) (tipN y))          = tipN (x ∷ y ∷ [])
 up {_} {_} {_}       {0<k} {k<n} (node (tip0 x) u@(node _ u'))     = node (mapB (λ q → x ∷ q ∷ []) u) (up {_} {_} {_} {0<k} { m≤n⇒m<1+n (bounded u') } u)
 up {k = suc (suc k)} {0<k} {k<n} (node (tipN x) u)                 = ⊥-elim (n≮n (suc (suc k)) k<n)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) (tipN y))      = tipN ((unTip (up {_} {_} {_} {0<1+n} {(<-pred k<n)} t)) ∷ʳ y)
 up {_} {_} {_}       {0<k} {k<n} (node t@(node _ _) u@(node _ u')) = node (zipBW (_∷ʳ_) (up {_} {_} {_} {0<1+n} {(s<s⁻¹ k<n)} t) u) (up {_} {_} {_} {0<1+n} {(m≤n⇒m<1+n (bounded u'))} u)
 
+up' : {n k : ℕ} → {0 < k} → {k < n} → BTree A n k → BTree (Vec A (suc k)) n (suc k)
+up' {_} {n} {zero} {()} {k<n} t
+up' {_} {zero} {suc k} {0<k} {k<n} ()
+up' {_} {suc n} {suc .n} {0<k} {k<n} (tipN x) = {!   !}
+up' {_} {suc .1} {suc .0} {0<k} {k<n} (node (tip0 x) (tipN x₁)) = {!   !}
+up' {_} {suc .(suc _)} {suc .0} {0<k} {k<n} (node (tip0 x) (node u u₁)) = {!   !}
+up' {_} {suc .(suc _)} {suc .(suc _)} {0<k} {k<n} (node (tipN x) u) = {!   !}
+up' {_} {suc .(2+ _)} {suc .(suc _)} {0<k} {k<n} (node (node t t₁) (tipN x)) = {!   !}
+up' {_} {suc .(suc _)} {suc .(suc _)} {0<k} {k<n} (node (node t t₁) (node u u₁)) = {!   !}
 
-upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
-       → Ch k xs t → Ch (suc k) xs t' → (2≤suc-k : 2 ≤ suc k) → (suc-k≤len : suc k < suc n) → up {_} {_} {_} {1+m≤n⇒m<n (≤-pred 2≤suc-k)} {<-pred suc-k≤len} t ≡ mapB subs t'
-upSpec {k = zero}        {xs = xs}                     ch                                            ch'              (s≤s ())  suc-k≤len
-upSpec {k = suc k}       {xs = x ∷ []}                 ch                                            ch'               2≤suc-k (s≤s (s≤s ()))
-upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}           (suc≢ x₂  zero              suc≡)              suc≡              2≤suc-k  suc-k≤len           = refl -- Case 1.
-upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}           (suc≢ x₂  zero             (suc≢ x₃ ch₂ ch₃))  suc≡              2≤suc-k  suc-k≤len           = ⊥-elim (x₃ refl) -- Case 1.
-upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ xs}           (suc≢ x₂ (suc≢ x₃ ch₁ ch₂)  suc≡)              suc≡              2≤suc-k  suc-k≤len           = {!   !} -- Case 2.
-upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ xs}           (suc≢ x₂  ch₁              (suc≢ x₃ ch₂ ch₃))  suc≡              2≤suc-k  suc-k≤len           = ⊥-elim (x₃ refl)
-upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}            ch                                           (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (x₂ refl)
-upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ []}            ch                                           (suc≢ x₂ ch' ch'') 2≤suc-k (s≤s (s≤s (s≤s ())))
-upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ x₃ ∷ xs}      (suc≢ x₄  zero             (suc≢ x₅ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = {!   !} -- Case 3.1
-upSpec {k = 2+ .(suc _)} {xs = x ∷ x₁ ∷ x₃ ∷ xs}       suc≡                                         (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (1+n≰n suc-k≤len)
-upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ x₃ ∷ []}      (suc≢ x₄  ch₁               ch₂)              (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim {!   !}
-upSpec {k = 2+ .(suc _)} {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄  ch₁               suc≡)             (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (x₂ refl)
-upSpec {k = 2+ .(2+ _)}  {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄  suc≡             (suc≢ x₆ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (1+n≰n suc-k≤len)
-upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄ (suc≢ x₇ ch₁ ch₄) (suc≢ x₆ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = {!   !} -- Case 3.2
+-- upSpec : {k : ℕ} {xs : Vec A n} {t : BTree (Vec A k) n k} {t' : BTree (Vec A (suc k)) n (suc k)}
+--        → Ch k xs t → Ch (suc k) xs t' → (2≤suc-k : 2 ≤ suc k) → (suc-k≤len : suc k < suc n) → up {_} {_} {_} {1+m≤n⇒m<n (≤-pred 2≤suc-k)} {<-pred suc-k≤len} t ≡ mapB subs t'
+-- upSpec {k = zero}        {xs = xs}                     ch                                            ch'              (s≤s ())  suc-k≤len -- B_Ch_left case 1.
+-- upSpec {k = suc k}       {xs = x ∷ []}                 ch                                            ch'               2≤suc-k (s≤s (s≤s ()))
+-- upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}           (suc≢ x₂  zero              suc≡)              suc≡              2≤suc-k  suc-k≤len           = refl -- B_Ch_left case 3. 
+-- upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}           (suc≢ x₂  zero             (suc≢ x₃ ch₂ ch₃))  suc≡              2≤suc-k  suc-k≤len           = ⊥-elim (x₃ refl)
+-- upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ xs}           (suc≢ x₂ (suc≢ x₃ ch₁ ch₂)  suc≡)              suc≡              2≤suc-k  suc-k≤len           = {!   !} -- B_Ch_left case 7.
+-- upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ xs}           (suc≢ x₂  ch₁              (suc≢ x₃ ch₂ ch₃))  suc≡              2≤suc-k  suc-k≤len           = ⊥-elim (x₃ refl) -- B_Ch_left case 9.
+-- upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ []}            ch                                           (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (x₂ refl) -- B_Ch_left case 4.
+-- upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ []}            ch                                           (suc≢ x₂ ch' ch'') 2≤suc-k (s≤s (s≤s (s≤s ())))
+-- upSpec {k = suc zero}    {xs = x ∷ x₁ ∷ x₃ ∷ xs}      (suc≢ x₄  zero             (suc≢ x₅ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = {!   !} -- B_Ch_left case 5.
+-- upSpec {k = 2+ .(suc _)} {xs = x ∷ x₁ ∷ x₃ ∷ xs}       suc≡                                         (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (1+n≰n suc-k≤len) -- B_Ch_left case 2.
+-- upSpec {k = 2+ zero}     {xs = x ∷ x₁ ∷ x₃ ∷ []}      (suc≢ x₄  ch₁               ch₂)              (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (x₂ refl)
+-- upSpec {k = 2+ (suc k)}  {xs = x ∷ x₁ ∷ x₃ ∷ []}      (suc≢ x₄  ch₁               ch₂)              (suc≢ x₂ ch' ch'') 2≤suc-k (s≤s (s≤s (s≤s (s≤s ()))))
+-- upSpec {k = 2+ .(suc _)} {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄  ch₁               suc≡)             (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (x₂ refl) -- B_Ch_left case 8.
+-- upSpec {k = 2+ .(2+ _)}  {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄  suc≡             (suc≢ x₆ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = ⊥-elim (1+n≰n suc-k≤len) -- B_Ch_left case 6.
+-- upSpec {k = 2+ k}        {xs = x ∷ x₁ ∷ x₃ ∷ x₅ ∷ xs} (suc≢ x₄ (suc≢ x₇ ch₁ ch₄) (suc≢ x₆ ch₂ ch₃)) (suc≢ x₂ ch' ch'') 2≤suc-k  suc-k≤len           = {!   !} -- B_Ch_left case 10.
 
 
 

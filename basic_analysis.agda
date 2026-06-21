@@ -1,6 +1,6 @@
 open import Data.Nat using (ℕ; zero; suc) renaming (_≤′_ to _≤_; ≤′-reflexive to base; ≤′-step to step)
 open import Data.Nat.Properties
-open import Data.Vec
+open import Data.Vec hiding (head)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.HeterogeneousEquality hiding (cong)
 open import Data.Unit
@@ -277,6 +277,64 @@ module Part4 -- Translation to basic analysis operators (eliminating dependent p
                   (λ {(m , suc n , step m≤n  , b) .(suc m) .n .m≤n  refl → let (_ , b') = b in step (b' (m , n , m≤n) refl) })
                  (m , n , m<n , b) })
            (m , n , m<n)
+
+    -- Example for unification
+    elim-Vec : (P : {n : ℕ} → Vec A n → Set)
+             → P []
+             → ({n : ℕ} {x : A} {xs : Vec A n} → P xs → P (x ∷ xs))
+             → {n : ℕ} (xs : Vec A n) → P xs
+    elim-Vec p pz ps  []      = pz
+    elim-Vec p pz ps (x ∷ xs) = ps (elim-Vec p pz ps xs)
+    
+    case-Vec : (P : ∀ n → Vec A n → Set)
+             → P zero []
+             → ((n : ℕ) (x : A) (xs : Vec A n) → P (suc n) (x ∷ xs))
+             → (n : ℕ) (xs : Vec A n) → P n xs
+    case-Vec P pz ps .zero     []      = pz
+    case-Vec P pz ps .(suc _) (x ∷ xs) = ps _ x xs
+    
+    basic-case-Vec : (Δ : Set) (T : Δ → Set) (t : Δ → Σ ℕ (Vec A))
+                    → ((δ : Δ) → (zero , []) ≡ t δ → T δ)
+                    → ((δ : Δ) (n : ℕ) (x : A) (xs : Vec A n) → (suc n , x ∷ xs) ≡ t δ → T δ)
+                    → (δ : Δ) → T δ
+    basic-case-Vec Δ T t m₁ m₂ δ = let (n , xs) = t δ in case-Vec (λ n xs → (δ : Δ) → (n , xs) ≡ t δ → T δ) m₁ (λ n x xs δ → m₂ δ n x xs) n xs δ refl
+    
+    
+    Below-Vec : (P : ∀ n → Vec A n → Set) → ∀ n → Vec A n → Set
+    Below-Vec P .zero     []      = ⊤
+    Below-Vec P .(suc _) (x ∷ xs) = Below-Vec P _ xs × P _ xs
+    
+    below-Vec : (P : ∀ n → Vec A n → Set)
+              → (p : ∀ n → (xs : Vec A n) → Below-Vec P n xs → P n xs)
+              → ∀ n → (xs : Vec A n) → Below-Vec P n xs
+    below-Vec P p .zero     []      = tt
+    below-Vec P p .(suc _) (x ∷ xs) = let b = below-Vec P p _ xs
+                                      in (b , p _ xs b)
+    
+    rec-Vec : (P : ∀ n → Vec A n → Set)
+            → (∀ n → (xs : Vec A n) → Below-Vec P n xs → P n xs)
+            → ∀ n → (xs : Vec A n) → P n xs
+    rec-Vec P p n xs = p n xs (below-Vec P p n xs)
+
+    basic-rec-Vec : (Δ : Set) (T : Δ → Set) (t : (δ : Δ) → Σ ℕ (Vec A))
+                  → ((δ : Δ) (n : ℕ) (xs : Vec A n) → (b : Below-Vec (λ n xs → (δ : Δ) → (n , xs) ≡ t δ → T δ) n xs) → (n , xs) ≡ t δ → T δ)
+                  → (δ : Δ) → T δ
+    basic-rec-Vec Δ T t p δ = let (n , xs) = t δ in rec-Vec (λ n xs → (δ : Δ) → (n , xs) ≡ t δ → T δ) (λ n xs b δ → p δ n xs b) n xs δ refl
+
+    head : ∀ n → Vec A (suc n) → A
+    head n (x ∷ xs) = x
+    
+    head' : ∀ n → Vec A (suc n) → A
+    head' {A} n xs = let P : ∀ n → Vec A n → Set
+                         P = λ Dn Dxs → ((n , xs) : Σ[ n ∈ ℕ ] Vec A (suc n)) → (Dn , Dxs) ≡ (suc n , xs) → A
+                     in basic-rec-Vec (Σ[ n ∈ ℕ ] Vec A (suc n)) (λ _ → A) (λ (n , xs) → (suc n , xs))  
+                                      (λ {(n , xs) .(suc n) .xs b refl → 
+                                           basic-case-Vec (Σ[ n ∈ ℕ ] Σ[ xs ∈ Vec A (suc n) ] Below-Vec P (suc n) xs) (λ (n , _) → A) (λ (n , xs , _) → (suc n , xs)) 
+                                                          (λ {(n , xs , b) ()})
+                                                          (λ {(n , (x ∷ xs) , b) .n .x .xs refl → x}) 
+                                           (n , xs , b)})
+                        (n , xs)
+
 
 module Part5 -- Laws/transformations
   where
