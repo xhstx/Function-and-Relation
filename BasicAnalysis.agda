@@ -155,7 +155,7 @@ module Part3 -- Basic Analysis
         → ((m n : ℕ) (m≡n : m ≡ n) → P m n (base m≡n))
         → ((m n : ℕ) (m≤n : m ≤ n) → P m (suc n) (step m≤n))
         → (m n : ℕ) (m≤n : m ≤ n) → P m n m≤n
-  case-≤ P pb ps m n m≤n = elim-≤ P (λ {m₀ n₀ m₀≡n₀} → pb m₀ n₀ m₀≡n₀) (λ {m₀ n₀ m₀≤n₀} _ → ps m₀ n₀ m₀≤n₀) m n m≤n
+  case-≤ P pb ps = elim-≤ P (λ {m₀ n₀ m₀≡n₀} → pb m₀ n₀ m₀≡n₀) (λ {m₀ n₀ m₀≤n₀} _ → ps m₀ n₀ m₀≤n₀)
 
   -- Generalize to an arbitrary dependent function type
   -- t: Extract the data and its indices from the input
